@@ -1,0 +1,119 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "com.github.rwsbillyang.nitritedemo"
+        minSdkVersion 15
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        // Enabling multidex support.
+        multiDexEnabled true
+        flavorDimensions "versionCode"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES.txt'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/dependencies.txt'
+        exclude 'META-INF/LGPL2.1'
+    }
+//    dexOptions {
+//        jumboMode true          // required
+//    }
+    //for multidex
+    productFlavors {
+        // Define separate dev and prod product flavors.
+        dev {
+            // dev utilizes minSDKVersion = 21 to allow the Android gradle plugin
+            // to pre-dex each module and produce an APK that can be tested on
+            // Android Lollipop without time consuming dex merging processes.
+            minSdkVersion 15
+        }
+        prod {
+            // The actual minSdkVersion for the application.
+            minSdkVersion 15
+        }
+    }
+    //for multidex
+    afterEvaluate {
+        tasks.matching {
+            it.name.startsWith('dex')
+        }.each { dx ->
+            if (dx.additionalParameters == null) {
+                dx.additionalParameters = []
+            }
+            dx.additionalParameters += '--multi-dex'
+            dx.additionalParameters += "--main-dex-list=$projectDir/dexlist.txt".toString()
+        }
+    }
+    //https://github.com/Kotlin/kotlinx.coroutines/issues/1064
+    packagingOptions {
+        pickFirst 'META-INF/kotlinx-io.kotlin_module'
+        pickFirst 'META-INF/atomicfu.kotlin_module'
+        pickFirst 'META-INF/kotlinx-coroutines-io.kotlin_module'
+    }
+
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+    implementation "androidx.constraintlayout:constraintlayout:$rootProject.constraintLayoutVersion"
+    implementation "androidx.appcompat:appcompat:$rootProject.supportLibraryVersion"
+    implementation "androidx.core:core-ktx:$rootProject.ktxVersion"
+    implementation "com.android.support:design:28.0.0"
+    //for multidex
+    implementation 'com.android.support:multidex:2.0.0'
+
+    //nosql db
+    implementation ('org.dizitart:nitrite:3.2.0'){
+        exclude group:"com.fasterxml.jackson.datatype", module:"jackson-datatype-jsr310"
+        exclude group:"com.fasterxml.jackson.datatype", module:"jackson-datatype-jdk8"
+        //Execution failed for task ':app:mergeExtDexDebug'.
+        //> Could not resolve all files for configuration ':app:debugRuntimeClasspath'.
+        //   > Failed to transform artifact 'jackson-datatype-jdk8.jar (com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.5)' to match attributes {artifactType=android-dex, dexing-is-debuggable=true, dexing-min-sdk=15, org.gradle.usage=java-runtime-jars}
+
+    }
+    implementation('org.dizitart:potassium-nitrite:3.2.0'){
+        exclude group:"com.fasterxml.jackson.datatype", module:"jackson-datatype-jsr310"
+        exclude group:"com.fasterxml.jackson.datatype", module:"jackson-datatype-jdk8"
+    }
+
+    implementation ("com.fasterxml.jackson.core:jackson-core:2.7.9"){ force = true }
+    implementation ("com.fasterxml.jackson.core:jackson-annotations:2.7.9"){ force = true  }
+    implementation ("com.fasterxml.jackson.core:jackson-databind:2.7.9"){ force = true  }
+
+}
